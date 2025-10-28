@@ -1,11 +1,8 @@
 from fastapi import APIRouter
+from app.routes.video import video_router
+from app.routes.chat import chat_router
 
 router = APIRouter()
 
-@router.get("/health")
-def health_check():
-    return {"status": "ok"}
-
-@router.get("/items/{item_id}")
-def read_item(item_id: int):
-    return {"item_id": item_id, "name": f"Item {item_id}"}
+router.include_router(video_router, prefix="/video")
+router.include_router(chat_router, prefix="/chat")

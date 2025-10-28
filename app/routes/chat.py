@@ -1,24 +1,15 @@
 from fastapi import APIRouter, HTTPException
-from app.services import rag_service
+from app.services import chat_service
 
-router = APIRouter()
+chat_router = APIRouter()
 
-@router.post("/query")
+@chat_router.post("/query")
 async def chat_query(data: dict):
-    """
-    Handles chat with a processed video.
-    Performs RAG retrieval and response generation.
-    """
-    try:
-        video_id = data.get("video_id")
-        question = data.get("question")
-        session_id = data.get("session_id")  # Optional for multi-turn chats
-
-        if not video_id or not question:
-            raise HTTPException(status_code=400, detail="Missing video_id or question")
-
-        response = await rag_service.handle_chat(video_id, question, session_id)
-
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    query = data.get("query", "")
+    if not query or not isinstance(query, str):
+        raise HTTPException(status_code=400, detail="Invalid or missing 'query' field")
+    video_id = data.get("video_id", "")
+    if not video_id or not isinstance(video_id, str):
+        raise HTTPException(status_code=400, detail="Invalid or missing 'video_id' field")
+    result = await chat_service.handle_chat(video_id, query)
+    return {"result": result}
