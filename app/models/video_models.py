@@ -1,9 +1,15 @@
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 class VideoUploadRequest(BaseModel):
-    urls: List[str]
+    urls: List[str] = Field(..., description="List of YouTube video URLs to process")
 
 class VideoProcessResponse(BaseModel):
-    video_id: str
-    status: str
+    video_id: Optional[str] = None
+    url: str
+    status: str  # "processing", "active", "error"
+    chunks_count: Optional[int] = None
+    message: str
+
+class VideoProcessBatchResponse(BaseModel):
+    results: List[VideoProcessResponse]
