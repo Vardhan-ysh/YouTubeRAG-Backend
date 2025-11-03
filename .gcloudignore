@@ -1,0 +1,50 @@
+# This file specifies files that are not uploaded to Google Cloud Platform
+# See https://cloud.google.com/sdk/gcloud/reference/topic/gcloudignore
+
+.gcloudignore
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment
+.env
+.env.local
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tests
+tests/
+*.test.py
+
+# Documentation
+*.md
+!README.md
+
+# Logs
+*.log
+
+# Cache
+.cache/
+.pytest_cache/
+
+# Other
+utils_cli.py
+SUMMARY_ENDPOINT.md
+supabase_schema.sql
