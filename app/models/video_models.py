@@ -13,3 +13,21 @@ class VideoProcessResponse(BaseModel):
 
 class VideoProcessBatchResponse(BaseModel):
     results: List[VideoProcessResponse]
+
+class VideoSummaryRequest(BaseModel):
+    video_id: str = Field(..., description="YouTube video ID to summarize")
+
+class SummarySourceChunk(BaseModel):
+    chunk_index: int
+    text: str
+    start_time: float = 0.0
+    end_time: float = 0.0
+    url: str = ""
+    video_id: str = ""
+
+class VideoSummaryResponse(BaseModel):
+    video_id: str
+    summary: str  # Markdown formatted summary
+    sources: List[SummarySourceChunk]  # All chunks used in the summary with metadata
+    status: str  # "success", "not_found", "processing", "error"
+    message: Optional[str] = None
