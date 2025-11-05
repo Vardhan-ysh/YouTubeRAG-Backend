@@ -7,9 +7,10 @@ import ast
 
 load_dotenv()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Strip whitespace and control characters from environment variables
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "").strip()
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 

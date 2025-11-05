@@ -12,6 +12,9 @@ from datetime import datetime, timedelta
 
 def extract_video_id(url: str) -> str:
     """Extract video ID from YouTube URL"""
+    # Remove all whitespace and non-printable characters (including \r, \n, \t, etc.)
+    url = ''.join(char for char in url if char.isprintable() and not char.isspace())
+    
     patterns = [
         r'(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})',
         r'youtube\.com\/embed\/([a-zA-Z0-9_-]{11})',
@@ -21,6 +24,7 @@ def extract_video_id(url: str) -> str:
         if match:
             return match.group(1)
     # If no pattern matches, assume the input is already a video ID
+    # Should already be clean from above processing
     return url
 
 def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
@@ -42,7 +46,6 @@ async def process_videos(urls: list[str]):
     Process YouTube videos: fetch transcripts, chunk, generate embeddings, and store in Supabase
     """
     results = []
-    ytt_api = YouTubeTranscriptApi()
     
     for url in urls:
         video_id = None
@@ -63,15 +66,16 @@ async def process_videos(urls: list[str]):
             # Mark as processing
             mark_video_processing(video_id)
             
-            # Fetch transcript
-            transcript = ytt_api.fetch(video_id, languages=['en'])
+            # Fetch transcript using the correct API
+            ytt_api = YouTubeTranscriptApi()
+            fetched_transcript = ytt_api.fetch(video_id, languages=['en'])
             
             # Build text with timing information
             # Create a mapping of character position to timing info
             full_text = ""
             timing_map = []  # List of (start_pos, end_pos, start_time, duration)
             
-            for snippet in transcript:
+            for snippet in fetched_transcript:
                 start_pos = len(full_text)
                 full_text += snippet.text + " "
                 end_pos = len(full_text) - 1
@@ -122,9 +126,9 @@ async def process_videos(urls: list[str]):
                 chunks_metadata.append({
                     "url": url,
                     "video_id": video_id,
-                    "language": transcript.language,
-                    "language_code": transcript.language_code,
-                    "is_generated": transcript.is_generated,
+                    "language": fetched_transcript.language,
+                    "language_code": fetched_transcript.language_code,
+                    "is_generated": fetched_transcript.is_generated,
                     "start_time": chunk_meta["start_time"],
                     "end_time": chunk_meta["end_time"],
                     "timings": chunk_meta["timings"]
@@ -157,11 +161,16 @@ async def process_videos(urls: list[str]):
                 except:
                     pass  # Ignore cleanup errors
             
+            import traceback
+            error_details = f"{type(e).__name__}: {str(e)}"
+            print(f"Error processing video {video_id}: {error_details}")
+            print(traceback.format_exc())
+            
             results.append({
                 "video_id": video_id,
                 "url": url,
                 "status": "error",
-                "message": str(e)
+                "message": error_details
             })
     
     return results

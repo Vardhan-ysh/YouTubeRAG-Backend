@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize Gemini client
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# Initialize Gemini client - strip whitespace from API key
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY", "").strip())
 
 def get_embeddings(texts: list[str]):
     """
