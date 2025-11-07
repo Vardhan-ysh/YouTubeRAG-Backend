@@ -4,7 +4,7 @@ echo -n "your-supabase-url" | gcloud secrets create SUPABASE_URL --data-file=-
 echo -n "your-supabase-anon-key" | gcloud secrets create SUPABASE_ANON_KEY --data-file=-
 echo -n "your-database-url" | gcloud secrets create DATABASE_URL --data-file=- 
 echo -n "your-rapidapi-key" | gcloud secrets create RAPIDAPI_KEY --data-file=-
-echo -n "youtube-transcriptor.p.rapidapi.com" | gcloud secrets create RAPIDAPI_HOST --data-file=-
+echo -n "video-transcript-scraper.p.rapidapi.com" | gcloud secrets create RAPIDAPI_HOST --data-file=-
 echo -n "en" | gcloud secrets create TRANSCRIPT_LANG --data-file=-
 
 <!-- To update secrets -->
@@ -13,7 +13,7 @@ echo -n "your-updated-supabase-url" | gcloud secrets versions add SUPABASE_URL -
 echo -n "your-updated-supabase-anon-key" | gcloud secrets versions add SUPABASE_ANON_KEY --data-file=-
 echo -n "your-updated-database-url" | gcloud secrets versions add DATABASE_URL --data-file=-
 echo -n "your-updated-rapidapi-key" | gcloud secrets versions add RAPIDAPI_KEY --data-file=-
-echo -n "your-updated-rapidapi-host" | gcloud secrets versions add RAPIDAPI_HOST --data-file=-
+echo -n "video-transcript-scraper.p.rapidapi.com" | gcloud secrets versions add RAPIDAPI_HOST --data-file=-
 echo -n "your-updated-transcript-lang" | gcloud secrets versions add TRANSCRIPT_LANG --data-file=-
 
 <!-- To delete secrets -->

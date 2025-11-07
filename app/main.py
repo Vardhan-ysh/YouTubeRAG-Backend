@@ -18,4 +18,4 @@ app.include_router(router, prefix="/api")
 
 @app.get("/")
 def root():
-    return {"message": "YouTube RAG backend is running 🚀"}
+    return {"message": "YouTube RAG backend is running"}
