@@ -7,12 +7,43 @@ import ast
 
 load_dotenv()
 
-# Strip whitespace and control characters from environment variables
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "").strip()
-DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Helper to clean env values (remove CR/LF, tabs and other non-printable chars)
+def _clean_env_value(s: str) -> str:
+    if not s:
+        return ""
+    if not isinstance(s, str):
+        s = str(s)
+    # remove common control characters and any non-printable ASCII
+    s = s.replace("\r", "").replace("\n", "").replace("\t", "")
+    s = ''.join(ch for ch in s if 32 <= ord(ch) <= 126)
+    return s.strip()
+
+# Load and sanitize environment variables
+SUPABASE_URL = _clean_env_value(os.getenv("SUPABASE_URL", ""))
+SUPABASE_KEY = _clean_env_value(os.getenv("SUPABASE_ANON_KEY", ""))
+DATABASE_URL = _clean_env_value(os.getenv("DATABASE_URL", ""))
+
+# Lazily initialize the Supabase client so import-time errors don't crash the container
+_supabase = None
+
+def get_supabase():
+    """Return a singleton Supabase client. Initialize on first call with sanitized env vars."""
+    global _supabase
+    if _supabase is not None:
+        return _supabase
+
+    if not SUPABASE_URL:
+        raise RuntimeError("SUPABASE_URL is not set or empty")
+    if not SUPABASE_KEY:
+        raise RuntimeError("SUPABASE_ANON_KEY is not set or empty")
+
+    # Basic validation of URL format
+    if not SUPABASE_URL.startswith("http://") and not SUPABASE_URL.startswith("https://"):
+        raise RuntimeError(f"Invalid SUPABASE_URL: {repr(SUPABASE_URL)}")
+
+    _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 
 # Table names
 VIDEO_STATUS_TABLE = "video_status"
@@ -25,7 +56,8 @@ def get_video_status(video_id: str) -> str | None:
     Returns: 'processing', 'active', or None if not found
     """
     try:
-        result = supabase.table(VIDEO_STATUS_TABLE).select("status").eq("video_id", video_id).execute()
+        sb = get_supabase()
+        result = sb.table(VIDEO_STATUS_TABLE).select("status").eq("video_id", video_id).execute()
         if result.data and len(result.data) > 0:
             return result.data[0]["status"]
         return None
@@ -37,7 +69,8 @@ def get_video_status(video_id: str) -> str | None:
 def mark_video_processing(video_id: str):
     """Mark video as processing"""
     try:
-        supabase.table(VIDEO_STATUS_TABLE).upsert({
+        sb = get_supabase()
+        sb.table(VIDEO_STATUS_TABLE).upsert({
             "video_id": video_id,
             "status": "processing",
             "updated_at": datetime.utcnow().isoformat()
@@ -50,7 +83,8 @@ def mark_video_processing(video_id: str):
 def mark_video_complete(video_id: str):
     """Mark video as active/complete"""
     try:
-        supabase.table(VIDEO_STATUS_TABLE).upsert({
+        sb = get_supabase()
+        sb.table(VIDEO_STATUS_TABLE).upsert({
             "video_id": video_id,
             "status": "active",
             "updated_at": datetime.utcnow().isoformat()
@@ -88,7 +122,8 @@ def save_video_embeddings(
             })
         
         # Insert all records
-        supabase.table(VIDEO_EMBEDDINGS_TABLE).insert(records).execute()
+        sb = get_supabase()
+        sb.table(VIDEO_EMBEDDINGS_TABLE).insert(records).execute()
         
     except Exception as e:
         print(f"Error saving embeddings: {e}")
@@ -101,7 +136,8 @@ def get_video_embeddings(video_id: str) -> list[dict] | None:
     Returns list of dicts with chunk_text, embedding, and metadata
     """
     try:
-        result = supabase.table(VIDEO_EMBEDDINGS_TABLE)\
+        sb = get_supabase()
+        result = sb.table(VIDEO_EMBEDDINGS_TABLE)\
             .select("chunk_index, chunk_text, embedding, metadata")\
             .eq("video_id", video_id)\
             .gt("expiry_date", datetime.utcnow().isoformat())\
@@ -181,13 +217,14 @@ def cleanup_expired_embeddings():
     """
     try:
         # First, get expired videos before deleting
-        expired_videos = supabase.table(VIDEO_EMBEDDINGS_TABLE)\
+        sb = get_supabase()
+        expired_videos = sb.table(VIDEO_EMBEDDINGS_TABLE)\
             .select("video_id")\
             .lt("expiry_date", datetime.utcnow().isoformat())\
             .execute()
         
         # Delete expired embeddings
-        supabase.table(VIDEO_EMBEDDINGS_TABLE)\
+        sb.table(VIDEO_EMBEDDINGS_TABLE)\
             .delete()\
             .lt("expiry_date", datetime.utcnow().isoformat())\
             .execute()
@@ -196,7 +233,7 @@ def cleanup_expired_embeddings():
         if expired_videos.data:
             video_ids = list(set([v["video_id"] for v in expired_videos.data]))
             for vid in video_ids:
-                supabase.table(VIDEO_STATUS_TABLE).delete().eq("video_id", vid).execute()
+                sb.table(VIDEO_STATUS_TABLE).delete().eq("video_id", vid).execute()
                 
     except Exception as e:
         print(f"Error cleaning up expired embeddings: {e}")

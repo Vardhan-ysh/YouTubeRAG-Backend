@@ -11,9 +11,8 @@ RUN apt-get update && apt-get install -y \
 
 # Copy pyproject.toml and install dependencies
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --only main --no-interaction --no-ansi --no-root
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+RUN uv pip install --system --no-cache -r pyproject.toml
 
 # Copy application code
 COPY ./app ./app
