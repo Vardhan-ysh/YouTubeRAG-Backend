@@ -237,3 +237,14 @@ def cleanup_expired_embeddings():
                 
     except Exception as e:
         print(f"Error cleaning up expired embeddings: {e}")
+
+
+# Provide a lazy proxy named `supabase` so other modules can import it directly
+# without forcing client initialization at import time. Attribute access will
+# initialize the real client on first use.
+class _SupabaseProxy:
+    def __getattr__(self, name):
+        return getattr(get_supabase(), name)
+
+
+supabase = _SupabaseProxy()
